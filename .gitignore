@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/
+workspace/
+.DS_Store
+xcuserdata/
+*.xcuserstate
+ios/DerivedData/

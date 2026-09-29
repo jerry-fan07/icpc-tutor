@@ -1,0 +1,67 @@
+name: ICPCTutor
+options:
+  bundleIdPrefix: com.jerryfan
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: XMB3LK279J
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.10"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  ICPCTutor:
+    type: application
+    platform: iOS
+    sources:
+      - path: ICPCTutor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jerryfan.icpctutor
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+    info:
+      path: ICPCTutor/Info.plist
+      properties:
+        CFBundleDisplayName: ICPC Tutor
+        UILaunchScreen: {}
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: "The app talks to the tutor server running on your Mac over your local network."
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: false
+  ICPCTutorUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ICPCTutorUITests
+    dependencies:
+      - target: ICPCTutor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jerryfan.icpctutor.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  ICPCTutor:
+    build:
+      targets:
+        ICPCTutor: all
+        ICPCTutorUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ICPCTutorUITests
+    archive:
+      config: Release
