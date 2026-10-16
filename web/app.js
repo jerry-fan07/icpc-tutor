@@ -181,6 +181,57 @@ function show(nodes, width) {
   window.scrollTo(0, 0);
 }
 
+// Two columns with a draggable rule between them.  The left width is a percentage kept
+// in --split (so the narrow-screen media query can still stack the columns) and
+// remembered under `key`; double-clicking the rule puts it back to `dflt`.
+function splitCols(left, right, key, dflt = 44) {
+  const rule = el('div', { class: 'rule', role: 'separator', 'aria-orientation': 'vertical',
+                           'aria-label': 'resize columns', tabindex: '0', title: 'drag to resize · double-click to reset' });
+  const cols = el('div', { class: 'problem-cols' }, left, rule, right);
+  let pct = Math.min(80, Math.max(20, +stored(key, dflt) || dflt));
+  const set = (p, save) => {
+    const w = cols.getBoundingClientRect().width;
+    const lo = w ? Math.max(20, 280 / w * 100) : 20, hi = w ? Math.min(80, 100 - 340 / w * 100) : 80;
+    pct = Math.round(Math.min(hi, Math.max(lo, p)) * 10) / 10;
+    cols.style.setProperty('--split', pct + '%');
+    rule.setAttribute('aria-valuenow', Math.round(pct));
+    if (save) store(key, pct);
+  };
+  cols.style.setProperty('--split', pct + '%');
+  rule.setAttribute('aria-valuenow', Math.round(pct));
+  requestAnimationFrame(() => set(pct));  // once on the page, clamp to this window's width
+  rule.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    rule.setPointerCapture(e.pointerId);
+    rule.classList.add('dragging');
+    document.body.classList.add('resizing');
+  });
+  rule.addEventListener('pointermove', e => {
+    if (!rule.hasPointerCapture(e.pointerId)) return;
+    const r = cols.getBoundingClientRect();
+    set((e.clientX - r.left) / r.width * 100);
+  });
+  const end = e => {
+    if (!rule.classList.contains('dragging')) return;
+    rule.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+    if (rule.hasPointerCapture(e.pointerId)) rule.releasePointerCapture(e.pointerId);
+    store(key, pct);
+  };
+  rule.addEventListener('pointerup', end);
+  rule.addEventListener('pointercancel', end);
+  rule.addEventListener('lostpointercapture', end);
+  rule.addEventListener('dblclick', () => set(dflt, true));
+  rule.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      set(pct + (e.key === 'ArrowLeft' ? -2 : 2), true);
+    }
+  });
+  return cols;
+}
+
 const VERDICT_NAME = { AC: 'Accepted', WA: 'Wrong Answer', TLE: 'Time Limit Exceeded',
                        RE: 'Run-Time Error', OLE: 'Output Limit Exceeded', CE: 'Compilation Error' };
 const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
@@ -1037,7 +1088,7 @@ async function screenProblem(ref) {
     el('div', { class: 'row', style: 'margin-top:16px' }, d.hints_total ? hintBtn : null, el('span', { class: 'grow' }), giveUpBtn),
     hintBox, editorialBox, subsHead, subsBox);
 
-  show(el('div', { class: 'problem-cols' }, left, el('div', { class: 'rule' }), panel.node), 'wide');
+  show(splitCols(left, panel.node, 'cp.split'), 'wide');
 }
 
 // -------------------------------------------------------------- contest
@@ -1164,7 +1215,7 @@ async function screenContestProblem(letter) {
     heading('output'), el('div', { class: 'book' }, prose(d.output)),
     heading('samples'), sampleNodes(d),
     heading('submissions'), subsBox);
-  show(el('div', { class: 'problem-cols' }, left, el('div', { class: 'rule' }), panel.node), 'wide');
+  show(splitCols(left, panel.node, 'cp.split'), 'wide');
 }
 
 // ------------------------------------------------------------- problems
@@ -1329,14 +1380,14 @@ async function screenPlayground() {
   };
   const ed = makeEditor(stored('cp.play.code', PLAY_DEFAULT), { tall: true, onChange: v => store('cp.play.code', v), onRun: run, onSubmit: run });
   stdin.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); run(); } });
-  show(el('div', { class: 'problem-cols' },
-    el('div', { class: 'statement', style: 'width:58%' },
+  show(splitCols(
+    el('div', { class: 'statement' },
       titleline('playground', 'compile and run anything'), el('div', { class: 'spacer' }), ed.node,
       el('div', { class: 'toolbar' }, el('button', { class: 'prominent', onclick: run }, 'run', el('span', { class: 'shortcut' }, MOD + '↵')),
         el('button', { class: 'bare small', onclick: () => { if (twice('play', 'Click again to restore the example program.')) { ed.set(PLAY_DEFAULT); store('cp.play.code', PLAY_DEFAULT); } } }, 'reset'),
         el('span', { class: 'where' }, State.env && State.env.compiler.ok ? State.env.compiler.version : ''))),
-    el('div', { class: 'rule' }),
-    el('div', { class: 'work' }, heading('stdin', '', false), el('div', { style: 'margin-top:6px' }, stdin), el('div', { style: 'margin-top:14px' }, out))), 'wide');
+    el('div', { class: 'work' }, heading('stdin', '', false), el('div', { style: 'margin-top:6px' }, stdin), el('div', { style: 'margin-top:14px' }, out)),
+    'cp.split.play', 58), 'wide');
   KEYS = { e: () => ed.focus() };
   MODKEYS = { Enter: run };
 }

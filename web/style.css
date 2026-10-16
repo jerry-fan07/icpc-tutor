@@ -303,8 +303,20 @@ a.rowbtn:hover, button.rowbtn:hover { background: var(--raised); color: inherit;
 
 /* ----------------------------------------------------------------- problem */
 .problem-cols { display: flex; align-items: flex-start; gap: 0; }
-.problem-cols > .statement { width: 44%; flex: none; padding-right: 28px; }
-.problem-cols > .rule { width: 1px; background: var(--hairline); align-self: stretch; flex: none; }
+.problem-cols > .statement { width: var(--split, 44%); flex: none; padding-right: 28px; }
+/* the rule is a drag handle: a 9px hit area around the 1px line, taking 1px of layout */
+.problem-cols > .rule {
+  width: 9px; margin: 0 -4px; align-self: stretch; flex: none; position: relative; z-index: 1;
+  cursor: col-resize; touch-action: none; outline: none;
+}
+.problem-cols > .rule::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--hairline);
+  transition: background .12s .1s, box-shadow .12s .1s;
+}
+.problem-cols > .rule:hover::before, .problem-cols > .rule:focus-visible::before, .problem-cols > .rule.dragging::before {
+  background: var(--accent); box-shadow: 0 0 0 1px var(--accent);
+}
+body.resizing, body.resizing * { cursor: col-resize !important; user-select: none; -webkit-user-select: none; }
 .problem-cols > .work { flex: 1; min-width: 0; padding-left: 26px; position: sticky; top: 60px; }
 @media (max-width: 1000px) {
   .problem-cols { display: block; }
